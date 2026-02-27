@@ -1,9 +1,0 @@
-{
-  "name": "safesphere",
-  "version": "1.0.0",
-  "description": "Offline Disaster Alert & Safe Zone Finder PWA",
-  "scripts": {
-    "start": "npx serve -l 3000",
-    "build": "echo 'No build required - static site'"
-  }
-}
