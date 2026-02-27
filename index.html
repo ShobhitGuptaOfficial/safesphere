@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SafeSphere - Disaster Alert & Safe Zone Finder</title>
+    <meta name="description" content="Offline Disaster Alert & Safe Zone Finder">
+    <meta name="theme-color" content="#0f0f1a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <!-- Splash Screen -->
+    <div class="splash-screen" id="splashScreen">
+        <div class="splash-content">
+            <div class="splash-logo">🛡️</div>
+            <h1 class="splash-title">SafeSphere</h1>
+            <p class="splash-subtitle">Disaster Alert & Safe Zone Finder</p>
+            <div class="splash-loader"></div>
+        </div>
+    </div>
+
+    <div class="app-container">
+        <!-- Home Screen -->
+        <div class="screen active" id="homeScreen">
+            <header class="header">
+                <div class="header-content">
+                    <div class="header-brand">
+                        <span class="header-logo">🛡️</span>
+                        <div>
+                            <div class="header-title">SafeSphere</div>
+                            <div class="header-subtitle">Stay Safe, Stay Informed</div>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <main class="main-content">
+                <div class="stats-grid">
+                    <div class="stat-card alert-stat">
+                        <div class="stat-icon">⚠️</div>
+                        <div class="stat-number" id="alertCount">0</div>
+                        <div class="stat-label">Active Alerts</div>
+                    </div>
+                    <div class="stat-card safe-stat">
+                        <div class="stat-icon">🏠</div>
+                        <div class="stat-number" id="safeZoneCount">5</div>
+                        <div class="stat-label">Safe Zones</div>
+                    </div>
+                </div>
+
+                <h2 class="section-title">Quick Actions</h2>
+                
+                <div class="quick-actions">
+                    <div class="quick-action" onclick="navigateTo('report')">
+                        <div class="quick-action-icon alert">⚠️</div>
+                        <div class="quick-action-text">
+                            <h3>Report Disaster</h3>
+                            <p>Report a disaster in your area</p>
+                        </div>
+                    </div>
+                    
+                    <div class="quick-action" onclick="navigateTo('safezones')">
+                        <div class="quick-action-icon safe">🏠</div>
+                        <div class="quick-action-text">
+                            <h3>Find Safe Zone</h3>
+                            <p>Locate nearest emergency shelter</p>
+                        </div>
+                    </div>
+                    
+                    <div class="quick-action" onclick="navigateTo('alerts')">
+                        <div class="quick-action-icon view">📋</div>
+                        <div class="quick-action-text">
+                            <h3>View Alerts</h3>
+                            <p>See all reported disasters</p>
+                        </div>
+                    </div>
+                    
+                    <div class="quick-action" onclick="navigateTo('map')">
+                        <div class="quick-action-icon map">🗺️</div>
+                        <div class="quick-action-text">
+                            <h3>Map View</h3>
+                            <p>Interactive map with all locations</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Quick Tips -->
+                <div class="card mt-2">
+                    <div class="card-title">💡 Quick Tips</div>
+                    <ul style="color: var(--text-secondary); font-size: 0.85rem; padding-left: 1.2rem; line-height: 1.8;">
+                        <li>Report disasters to help others stay informed</li>
+                        <li>Find the nearest emergency shelter quickly</li>
+                        <li>View all alerts on the interactive map</li>
+                        <li>Works offline - data saved locally</li>
+                    </ul>
+                </div>
+            </main>
+        </div>
+
+        <!-- Report Screen -->
+        <div class="screen" id="reportScreen">
+            <header class="header">
+                <div class="header-content">
+                    <div class="header-brand">
+                        <button class="back-btn" style="background:none;border:none;color:white;font-size:1.5rem;cursor:pointer;padding:0;margin-right:0.5rem;" onclick="navigateTo('home')">←</button>
+                        <div>
+                            <div class="header-title">Report Disaster</div>
+                            <div class="header-subtitle">Help others stay safe</div>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <main class="main-content">
+                <div class="card">
+                    <div class="form-group">
+                        <label for="disasterType">Disaster Type *</label>
+                        <select id="disasterType" required>
+                            <option value="">Select disaster type</option>
+                            <option value="flood">🌊 Flood</option>
+                            <option value="earthquake">🏚️ Earthquake</option>
+                            <option value="fire">🔥 Fire</option>
+                            <option value="storm">⛈️ Storm</option>
+                            <option value="other">⚠️ Other</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="description">Description (Optional)</label>
+                        <textarea id="description" placeholder="Describe the disaster situation, severity, affected area..." maxlength="200"></textarea>
+                        <div class="character-count"><span id="charCount">0</span>/200</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Location *</label>
+                        <button class="btn btn-outline" id="getLocationBtn" onclick="AlertManager.getLocation()">
+                            📍 Get Current Location
+                        </button>
+                        <div class="gps-status" id="gpsStatus"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="latitude">Latitude</label>
+                        <input type="number" step="any" id="latitude" placeholder="Or enter manually">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="longitude">Longitude</label>
+                        <input type="number" step="any" id="longitude" placeholder="Or enter manually">
+                    </div>
+
+                    <button class="btn btn-danger" id="submitBtn" onclick="AlertManager.submitAlert()" disabled>
+                        ⚠️ Report Disaster
+                    </button>
+                </div>
+            </main>
+        </div>
+
+        <!-- Alerts Screen -->
+        <div class="screen" id="alertsScreen">
+            <header class="header">
+                <div class="header-content">
+                    <div class="header-brand">
+                        <button class="back-btn" style="background:none;border:none;color:white;font-size:1.5rem;cursor:pointer;padding:0;margin-right:0.5rem;" onclick="navigateTo('home')">←</button>
+                        <div>
+                            <div class="header-title">Active Alerts</div>
+                            <div class="header-subtitle">Recent disaster reports</div>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <main class="main-content">
+                <div id="alertsList"></div>
+            </main>
+        </div>
+
+        <!-- Safe Zones Screen -->
+        <div class="screen" id="safezonesScreen">
+            <header class="header">
+                <div class="header-content">
+                    <div class="header-brand">
+                        <button class="back-btn" style="background:none;border:none;color:white;font-size:1.5rem;cursor:pointer;padding:0;margin-right:0.5rem;" onclick="navigateTo('home')">←</button>
+                        <div>
+                            <div class="header-title">Safe Zones</div>
+                            <div class="header-subtitle">Find emergency shelters</div>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <main class="main-content">
+                <div class="card">
+                    <button class="btn btn-success" onclick="findSafeZones()">
+                        🔍 Search Nearby Shelters
+                    </button>
+                    <p class="text-muted mt-1" style="font-size: 0.8rem; text-align: center;">
+                        Searches OpenStreetMap for real emergency shelters
+                    </p>
+                </div>
+                <div id="safeZonesList"></div>
+            </main>
+        </div>
+
+        <!-- Map Screen -->
+        <div class="screen" id="mapScreen">
+            <header class="header">
+                <div class="header-content">
+                    <div class="header-brand">
+                        <button class="back-btn" style="background:none;border:none;color:white;font-size:1.5rem;cursor:pointer;padding:0;margin-right:0.5rem;" onclick="navigateTo('home')">←</button>
+                        <div>
+                            <div class="header-title">Map View</div>
+                            <div class="header-subtitle">Interactive disaster map</div>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <main class="main-content">
+                <div class="map-wrapper">
+                    <div id="map"></div>
+                </div>
+                
+                <div class="map-controls">
+                    <button class="btn btn-primary" onclick="refreshLocation()">
+                        🔄 My Location
+                    </button>
+                    <button class="btn btn-danger" onclick="reportFromMap()">
+                        ⚠️ Report Here
+                    </button>
+                </div>
+                
+                <div class="card">
+                    <div class="card-title">Legend</div>
+                    <div class="legend">
+                        <div class="legend-item">
+                            <div class="legend-color user"></div>
+                            <span>Your Location</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color alert"></div>
+                            <span>Disaster Alert</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color safe"></div>
+                            <span>Safe Zone</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <p class="text-muted text-center mt-2" style="font-size: 0.8rem;">
+                    💡 Tap anywhere on map to select a location for reporting
+                </p>
+            </main>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <nav class="nav-bar">
+        <button class="nav-item active" onclick="navigateTo('home')" data-screen="home">
+            <span class="nav-icon">🏠</span>
+            <span class="nav-label">Home</span>
+        </button>
+        <button class="nav-item" onclick="navigateTo('report')" data-screen="report">
+            <span class="nav-icon">⚠️</span>
+            <span class="nav-label">Report</span>
+        </button>
+        <button class="nav-item" onclick="navigateTo('alerts')" data-screen="alerts">
+            <span class="nav-icon">📋</span>
+            <span class="nav-label">Alerts</span>
+        </button>
+        <button class="nav-item" onclick="navigateTo('safezones')" data-screen="safezones">
+            <span class="nav-icon">🏠</span>
+            <span class="nav-label">Safe Zones</span>
+        </button>
+        <button class="nav-item" onclick="navigateTo('map')" data-screen="map">
+            <span class="nav-icon">🗺️</span>
+            <span class="nav-label">Map</span>
+        </button>
+    </nav>
+
+    <!-- Footer -->
+    <footer class="footer">
+        Educational Prototype – Offline Disaster Awareness System
+    </footer>
+
+    <script src="js/app.js"></script>
+</body>
+</html>
